@@ -24,12 +24,17 @@ import org.eclipse.aether.transport.file.FileTransporterFactory
 import org.eclipse.aether.transport.http.HttpTransporterFactory
 import org.eclipse.aether.util.artifact.JavaScopes
 import org.eclipse.aether.util.filter.DependencyFilterUtils
+import java.nio.file.Files
+import java.nio.file.Path
+import java.nio.file.Paths
+import java.security.MessageDigest
+import java.util.function.BiPredicate
+import java.util.stream.Collectors
+import javax.xml.bind.DatatypeConverter
 
-private val blacklist = listOf(
-        "jdk"
-)
+class Downloader(private val repoBaseDir: String,
+                 private val blacklist: List<String> = listOf("jdk")) {
 
-class Downloader(repoBaseDir: String) {
     val system = newRepositorySystem()
     val session = newRepositorySystemSession(system, repoBaseDir)
     val artifactCache = mutableListOf<Artifact>()
@@ -57,7 +62,7 @@ class Downloader(repoBaseDir: String) {
         val dependencyResult = system.resolveDependencies(session, dependencyRequest)
 
         dependencyResult.artifactResults.forEach {
-            println("${it.artifact} resolved to ${it.artifact.file}")
+            println("Resolved: ${it.artifact} to: ${it.artifact.file}")
         }
 
         dependencyResult.root.children
@@ -66,7 +71,7 @@ class Downloader(repoBaseDir: String) {
                 .forEach { child -> download(child.artifact) }
     }
 
-    fun newRepositorySystem(): RepositorySystem {
+    private fun newRepositorySystem(): RepositorySystem {
         val locator = DefaultServiceLocator()
         locator.addService(RepositoryConnectorFactory::class.java, BasicRepositoryConnectorFactory::class.java)
         locator.addService(VersionResolver::class.java, DefaultVersionResolver::class.java)
@@ -77,7 +82,7 @@ class Downloader(repoBaseDir: String) {
         return locator.getService(RepositorySystem::class.java)
     }
 
-    fun newRepositorySystemSession(system: RepositorySystem, repoBaseDir: String): DefaultRepositorySystemSession {
+    private fun newRepositorySystemSession(system: RepositorySystem, repoBaseDir: String): DefaultRepositorySystemSession {
         val session = MavenRepositorySystemUtils.newSession()
 
         val localRepo = LocalRepository(repoBaseDir)
@@ -86,14 +91,62 @@ class Downloader(repoBaseDir: String) {
         return session
     }
 
-    fun newRepositories(): List<RemoteRepository> = listOf(
+    private fun newRepositories(): List<RemoteRepository> = listOf(
             RemoteRepository.Builder("central", "default", "https://repo.maven.apache.org/maven2/").build(),
             RemoteRepository.Builder("jcenter", "default", "https://jcenter.bintray.com/").build(),
             RemoteRepository.Builder("jitpack", "default", "https://jitpack.io").build(),
             RemoteRepository.Builder("gatehill", "default", "https://gatehillsoftware-maven.s3.amazonaws.com/snapshots/").build()
     )
+
+    fun collectJars(): List<UniqueFile> = Files
+            .find(Paths.get(repoBaseDir), 10, BiPredicate { path, _ -> path.fileName.toString().endsWith(".jar") })
+            .parallel()
+            .map { it.toAbsolutePath() }
+            .map { UniqueFile(it, checksum(it)) }
+            .distinct()
+            .collect(Collectors.toList())
+
+    private fun checksum(file: Path): String {
+        Files.newInputStream(file).use { stream ->
+            val digest = MessageDigest.getInstance("MD5")
+            val block = ByteArray(4096)
+
+            do {
+                val length = stream.read(block)
+                if (length <= 0) break
+                digest.update(block, 0, length)
+            } while (true)
+
+            return DatatypeConverter.printHexBinary(digest.digest())
+        }
+    }
+
+    class UniqueFile(val file: Path,
+                     val hash: String) {
+
+        override fun equals(other: Any?): Boolean {
+            if (this === other) return true
+            if (other?.javaClass != javaClass) return false
+            other as UniqueFile
+            return (hash == other.hash)
+        }
+
+        override fun hashCode() = hash.hashCode()
+
+        override fun toString() = "UniqueFile(file=${file.fileName}, hash=$hash)"
+    }
 }
 
 fun main(args: Array<String>) {
-    Downloader("target/local-repo").download("com.gatehill.corebot:backends-items:0.9.0-SNAPSHOT")
+    val blacklist = listOf(
+            "jdk",
+            "com.gatehill.corebot"
+    )
+
+    with(Downloader("target/local-repo", blacklist)) {
+        download("com.gatehill.corebot:backends-items:0.9.0-SNAPSHOT")
+
+        val jars = collectJars()
+        jars.forEach { println("Found: $it") }
+    }
 }
