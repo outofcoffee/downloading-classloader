@@ -1,0 +1,42 @@
+group 'com.gatehill'
+version '1.0-SNAPSHOT'
+
+buildscript {
+    ext.kotlin_version = '1.1.2-5'
+    ext.resolverVersion = '1.0.3'
+    ext.mavenVersion = '3.5.0'
+    ext.version_log4j = '2.5'
+
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+    }
+}
+
+apply plugin: 'kotlin'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    compile "org.jetbrains.kotlin:kotlin-stdlib-jre8:$kotlin_version"
+
+    compile "org.apache.maven.resolver:maven-resolver-api:${resolverVersion}"
+    compile "org.apache.maven.resolver:maven-resolver-spi:${resolverVersion}"
+    compile "org.apache.maven.resolver:maven-resolver-util:${resolverVersion}"
+    compile "org.apache.maven.resolver:maven-resolver-impl:${resolverVersion}"
+    compile "org.apache.maven.resolver:maven-resolver-connector-basic:${resolverVersion}"
+    compile "org.apache.maven.resolver:maven-resolver-transport-file:${resolverVersion}"
+    compile "org.apache.maven.resolver:maven-resolver-transport-http:${resolverVersion}"
+    compile "org.apache.maven:maven-resolver-provider:${mavenVersion}"
+
+    // redirect all logs to log4j2
+    compile "org.apache.logging.log4j:log4j-core:$version_log4j"
+    compile "org.apache.logging.log4j:log4j-jcl:$version_log4j"
+    compile "org.apache.logging.log4j:log4j-slf4j-impl:$version_log4j"
+    compile "org.apache.logging.log4j:log4j-1.2-api:$version_log4j"
+    compile "org.apache.logging.log4j:log4j-jul:$version_log4j"
+}
