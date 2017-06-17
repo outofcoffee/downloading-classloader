@@ -39,11 +39,10 @@ class Downloader(private val repoBaseDir: String,
     val session = newRepositorySystemSession(system, repoBaseDir)
     val artifactCache = mutableListOf<Artifact>()
 
-    fun download(coordinates: String, scope: String = JavaScopes.COMPILE) {
-        download(DefaultArtifact(coordinates), scope)
-    }
+    fun download(coordinates: String, scope: String = JavaScopes.RUNTIME) =
+            download(DefaultArtifact(coordinates), scope)
 
-    fun download(artifact: Artifact, scope: String = JavaScopes.COMPILE) {
+    fun download(artifact: Artifact, scope: String = JavaScopes.RUNTIME) {
         if (artifactCache.contains(artifact)) {
             println("Already downloaded: $artifact")
             return
@@ -67,7 +66,7 @@ class Downloader(private val repoBaseDir: String,
 
         dependencyResult.root.children
                 .filterNot { blacklist.contains(it.artifact.groupId) }
-                .filter { arrayOf(JavaScopes.COMPILE, JavaScopes.RUNTIME).contains(it.dependency.scope) }
+                .filter { JavaScopes.RUNTIME == it.dependency.scope }
                 .forEach { child -> download(child.artifact) }
     }
 
@@ -98,13 +97,17 @@ class Downloader(private val repoBaseDir: String,
             RemoteRepository.Builder("gatehill", "default", "https://gatehillsoftware-maven.s3.amazonaws.com/snapshots/").build()
     )
 
-    fun collectJars(): List<UniqueFile> = Files
-            .find(Paths.get(repoBaseDir), 10, BiPredicate { path, _ -> path.fileName.toString().endsWith(".jar") })
-            .parallel()
-            .map { it.toAbsolutePath() }
-            .map { UniqueFile(it, checksum(it)) }
-            .distinct()
-            .collect(Collectors.toList())
+    fun collectJars(): List<UniqueFile> {
+        println("Collecting JARs")
+
+        return Files
+                .find(Paths.get(repoBaseDir), 10, BiPredicate { path, _ -> path.fileName.toString().endsWith(".jar") })
+                .parallel()
+                .map { it.toAbsolutePath() }
+                .map { UniqueFile(it, checksum(it)) }
+                .distinct()
+                .collect(Collectors.toList())
+    }
 
     private fun checksum(file: Path): String {
         Files.newInputStream(file).use { stream ->
@@ -140,11 +143,16 @@ class Downloader(private val repoBaseDir: String,
 fun main(args: Array<String>) {
     val blacklist = listOf(
             "jdk",
+            "xerces",
             "com.gatehill.corebot"
     )
 
+    Paths.get("target/local-repo").toFile()
+            .takeIf { it.exists() }
+            ?.deleteRecursively()
+
     with(Downloader("target/local-repo", blacklist)) {
-        download("com.gatehill.corebot:backends-items:0.9.0-SNAPSHOT")
+        download("com.gatehill.corebot:stores-redis:0.9.0-SNAPSHOT")
 
         val jars = collectJars()
         jars.forEach { println("Found: $it") }
