@@ -25,7 +25,6 @@ import org.eclipse.aether.transport.http.HttpTransporterFactory
 import org.eclipse.aether.util.artifact.JavaScopes
 import org.eclipse.aether.util.filter.DependencyFilterUtils
 import org.eclipse.aether.util.filter.ExclusionsDependencyFilter
-import java.net.URLClassLoader
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -148,42 +147,5 @@ class Downloader(repoBaseDir: String,
     fun clearRepo() {
         println("Clearing repo: $repoDir")
         repoDir.toFile().takeIf { it.exists() }?.deleteRecursively()
-    }
-}
-
-fun main(args: Array<String>) {
-    // TODO generate excludes based on resolved dependencies for `core-api` and `core-engine`
-    val excludes = listOf(
-            DefaultArtifact("org.jetbrains.kotlin:kotlin-stdlib:0")/*,
-            DefaultArtifact("org.jetbrains.kotlin:kotlin-reflect:0"),
-            DefaultArtifact("org.jetbrains:annotations:0"),
-            DefaultArtifact("javax.inject:javax.inject:0"),
-            DefaultArtifact("org.apache.logging.log4j:log4j-api:0"),
-            DefaultArtifact("com.google.inject:guice:0"),
-            DefaultArtifact("com.google.guava:guava:0"),
-            DefaultArtifact("com.fasterxml.jackson.module:jackson-module-kotlin:0"),
-            DefaultArtifact("com.fasterxml.jackson.core:jackson-databind:0"),
-            DefaultArtifact("com.fasterxml.jackson.core:jackson-annotations:0"),
-            DefaultArtifact("com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:0"),
-            DefaultArtifact("com.fasterxml.jackson.core:jackson-core:0"),
-            DefaultArtifact("org.yaml:snakeyaml:0"),
-            DefaultArtifact("aopalliance:aopalliance:0"),
-            DefaultArtifact("com.gatehill.corebot:core-api:0"),
-            DefaultArtifact("com.gatehill.corebot:core-engine:0")*/
-    )
-
-    with(Downloader("target/local-repo", "com.gatehill.corebot:stores-redis:0.9.0-SNAPSHOT", excludes)) {
-        //        clearRepo()
-        download()
-
-        val jars = collectJars()
-        jars.forEach { println("Found: $it") }
-
-        val classLoader = URLClassLoader(jars.map { it.file.toUri().toURL() }.toTypedArray())
-        val clazz = classLoader.loadClass("com.gatehill.corebot.store.redis.RedisDataStoreImpl")
-        val dataStore = clazz.newInstance()
-        val partitionForClass = clazz.getDeclaredMethod("partitionForClass", String::class.java, Class::class.java)
-        val partition = partitionForClass.invoke(dataStore, "foo", String::class.java)
-        partition
     }
 }
