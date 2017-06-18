@@ -25,6 +25,7 @@ import org.eclipse.aether.transport.http.HttpTransporterFactory
 import org.eclipse.aether.util.artifact.JavaScopes
 import org.eclipse.aether.util.filter.DependencyFilterUtils
 import org.eclipse.aether.util.filter.ExclusionsDependencyFilter
+import java.net.URLClassLoader
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -33,13 +34,14 @@ import java.util.function.BiPredicate
 import java.util.stream.Collectors
 import javax.xml.bind.DatatypeConverter
 
-class Downloader(private val repoBaseDir: String,
+class Downloader(repoBaseDir: String,
                  private val root: String,
                  private val excludes: List<Artifact>) {
 
-    val system = newRepositorySystem()
-    val session = newRepositorySystemSession(system, repoBaseDir)
-    val artifactCache = mutableListOf<Artifact>()
+    private val repoDir: Path = Paths.get(repoBaseDir).toAbsolutePath()
+    private val system = newRepositorySystem()
+    private val session = newRepositorySystemSession(system, repoDir.toString())
+    private val artifactCache = mutableListOf<Artifact>()
 
     fun download(coordinates: String = root, scope: String = JavaScopes.RUNTIME) =
             download(DefaultArtifact(coordinates), scope)
@@ -106,9 +108,8 @@ class Downloader(private val repoBaseDir: String,
         println("Collecting JARs")
 
         return Files
-                .find(Paths.get(repoBaseDir), 10, BiPredicate { path, _ -> path.fileName.toString().endsWith(".jar") })
+                .find(repoDir, 10, BiPredicate { path, _ -> path.fileName.toString().endsWith(".jar") })
                 .parallel()
-                .map { it.toAbsolutePath() }
                 .map { UniqueFile(it, checksum(it)) }
                 .distinct()
                 .collect(Collectors.toList())
@@ -143,16 +144,17 @@ class Downloader(private val repoBaseDir: String,
 
         override fun toString() = "UniqueFile(file=${file.fileName}, hash=$hash)"
     }
+
+    fun clearRepo() {
+        println("Clearing repo: $repoDir")
+        repoDir.toFile().takeIf { it.exists() }?.deleteRecursively()
+    }
 }
 
 fun main(args: Array<String>) {
-    Paths.get("target/local-repo").toFile()
-            .takeIf { it.exists() }
-            ?.deleteRecursively()
-
     // TODO generate excludes based on resolved dependencies for `core-api` and `core-engine`
     val excludes = listOf(
-            DefaultArtifact("org.jetbrains.kotlin:kotlin-stdlib:0"),
+            DefaultArtifact("org.jetbrains.kotlin:kotlin-stdlib:0")/*,
             DefaultArtifact("org.jetbrains.kotlin:kotlin-reflect:0"),
             DefaultArtifact("org.jetbrains:annotations:0"),
             DefaultArtifact("javax.inject:javax.inject:0"),
@@ -167,13 +169,21 @@ fun main(args: Array<String>) {
             DefaultArtifact("org.yaml:snakeyaml:0"),
             DefaultArtifact("aopalliance:aopalliance:0"),
             DefaultArtifact("com.gatehill.corebot:core-api:0"),
-            DefaultArtifact("com.gatehill.corebot:core-engine:0")
+            DefaultArtifact("com.gatehill.corebot:core-engine:0")*/
     )
 
     with(Downloader("target/local-repo", "com.gatehill.corebot:stores-redis:0.9.0-SNAPSHOT", excludes)) {
+        //        clearRepo()
         download()
 
         val jars = collectJars()
         jars.forEach { println("Found: $it") }
+
+        val classLoader = URLClassLoader(jars.map { it.file.toUri().toURL() }.toTypedArray())
+        val clazz = classLoader.loadClass("com.gatehill.corebot.store.redis.RedisDataStoreImpl")
+        val dataStore = clazz.newInstance()
+        val partitionForClass = clazz.getDeclaredMethod("partitionForClass", String::class.java, Class::class.java)
+        val partition = partitionForClass.invoke(dataStore, "foo", String::class.java)
+        partition
     }
 }
