@@ -12,14 +12,12 @@ import java.net.URLClassLoader
 class MavenClassLoader(repoBaseDir: String,
                        root: String,
                        excludes: List<Artifact>,
-                       repositories: List<Pair<String, String>>) : URLClassLoader(emptyArray()) {
-
-    val downloader = Downloader(repoBaseDir, root, excludes, repositories)
+                       repositories: List<Pair<String, String>> = listOf(mavenCentral)) : URLClassLoader(emptyArray()) {
 
     init {
-        with(downloader) {
+        with(Downloader(repoBaseDir, root, excludes, repositories)) {
             download()
-            collectJars().forEach { super.addURL(it.file.toUri().toURL()) }
+            collectJars().forEach { addURL(it.file.toUri().toURL()) }
         }
     }
 }
