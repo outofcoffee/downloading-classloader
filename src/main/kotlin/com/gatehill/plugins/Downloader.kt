@@ -24,6 +24,7 @@ import org.eclipse.aether.transport.file.FileTransporterFactory
 import org.eclipse.aether.transport.http.HttpTransporterFactory
 import org.eclipse.aether.util.artifact.JavaScopes
 import org.eclipse.aether.util.filter.DependencyFilterUtils
+import org.eclipse.aether.util.filter.ExclusionsDependencyFilter
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -33,13 +34,14 @@ import java.util.stream.Collectors
 import javax.xml.bind.DatatypeConverter
 
 class Downloader(private val repoBaseDir: String,
-                 private val blacklist: List<String> = listOf("jdk")) {
+                 private val root: String,
+                 private val excludes: List<Artifact>) {
 
     val system = newRepositorySystem()
     val session = newRepositorySystemSession(system, repoBaseDir)
     val artifactCache = mutableListOf<Artifact>()
 
-    fun download(coordinates: String, scope: String = JavaScopes.RUNTIME) =
+    fun download(coordinates: String = root, scope: String = JavaScopes.RUNTIME) =
             download(DefaultArtifact(coordinates), scope)
 
     fun download(artifact: Artifact, scope: String = JavaScopes.RUNTIME) {
@@ -51,7 +53,10 @@ class Downloader(private val repoBaseDir: String,
         }
         println("Downloading: $artifact")
 
-        val classpathFilter = DependencyFilterUtils.classpathFilter(scope)
+        val classpathFilter = DependencyFilterUtils.andFilter(
+                DependencyFilterUtils.classpathFilter(scope),
+                ExclusionsDependencyFilter(excludes.map { "${it.groupId}:${it.artifactId}" })
+        )
 
         val collectRequest = CollectRequest()
         collectRequest.root = Dependency(artifact, scope)
@@ -65,8 +70,8 @@ class Downloader(private val repoBaseDir: String,
         }
 
         dependencyResult.root.children
-                .filterNot { blacklist.contains(it.artifact.groupId) }
-                .filter { JavaScopes.RUNTIME == it.dependency.scope }
+                .filterNot { child -> excludes.any { child.artifact.groupId == it.groupId && child.artifact.artifactId == it.artifactId } }
+                .filter { scope == it.dependency.scope }
                 .forEach { child -> download(child.artifact) }
     }
 
@@ -141,18 +146,32 @@ class Downloader(private val repoBaseDir: String,
 }
 
 fun main(args: Array<String>) {
-    val blacklist = listOf(
-            "jdk",
-            "xerces",
-            "com.gatehill.corebot"
-    )
-
     Paths.get("target/local-repo").toFile()
             .takeIf { it.exists() }
             ?.deleteRecursively()
 
-    with(Downloader("target/local-repo", blacklist)) {
-        download("com.gatehill.corebot:stores-redis:0.9.0-SNAPSHOT")
+    // TODO generate excludes based on resolved dependencies for `core-api` and `core-engine`
+    val excludes = listOf(
+            DefaultArtifact("org.jetbrains.kotlin:kotlin-stdlib:0"),
+            DefaultArtifact("org.jetbrains.kotlin:kotlin-reflect:0"),
+            DefaultArtifact("org.jetbrains:annotations:0"),
+            DefaultArtifact("javax.inject:javax.inject:0"),
+            DefaultArtifact("org.apache.logging.log4j:log4j-api:0"),
+            DefaultArtifact("com.google.inject:guice:0"),
+            DefaultArtifact("com.google.guava:guava:0"),
+            DefaultArtifact("com.fasterxml.jackson.module:jackson-module-kotlin:0"),
+            DefaultArtifact("com.fasterxml.jackson.core:jackson-databind:0"),
+            DefaultArtifact("com.fasterxml.jackson.core:jackson-annotations:0"),
+            DefaultArtifact("com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:0"),
+            DefaultArtifact("com.fasterxml.jackson.core:jackson-core:0"),
+            DefaultArtifact("org.yaml:snakeyaml:0"),
+            DefaultArtifact("aopalliance:aopalliance:0"),
+            DefaultArtifact("com.gatehill.corebot:core-api:0"),
+            DefaultArtifact("com.gatehill.corebot:core-engine:0")
+    )
+
+    with(Downloader("target/local-repo", "com.gatehill.corebot:stores-redis:0.9.0-SNAPSHOT", excludes)) {
+        download()
 
         val jars = collectJars()
         jars.forEach { println("Found: $it") }
