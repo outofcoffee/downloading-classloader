@@ -45,7 +45,7 @@ val jitpack = "jitpack" to "https://jitpack.io"
  */
 class Downloader(repoBaseDir: String,
                  private val root: String,
-                 private val excludes: List<Artifact>,
+                 private val excludes: List<Artifact> = emptyList(),
                  private val repositories: List<Pair<String, String>> = listOf(mavenCentral)) {
 
     private val repoDir: Path = Paths.get(repoBaseDir).toAbsolutePath()

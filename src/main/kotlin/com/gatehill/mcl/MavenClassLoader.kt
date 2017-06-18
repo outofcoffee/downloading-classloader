@@ -4,14 +4,14 @@ import org.eclipse.aether.artifact.Artifact
 import java.net.URLClassLoader
 
 /**
- * A `ClassLoader` that downloads dependencies from Maven repositories,
- * then makes them available on the classpath.
+ * A `ClassLoader` that downloads a dependency and its transitive dependencies
+ * from Maven repositories, then makes them available on the classpath.
  *
  * @author pete
  */
 class MavenClassLoader(repoBaseDir: String,
                        root: String,
-                       excludes: List<Artifact>,
+                       excludes: List<Artifact> = emptyList(),
                        repositories: List<Pair<String, String>> = listOf(mavenCentral)) : URLClassLoader(emptyArray()) {
 
     init {
