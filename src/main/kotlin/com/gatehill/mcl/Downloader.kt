@@ -1,4 +1,4 @@
-package com.gatehill.plugins
+package com.gatehill.mcl
 
 import org.apache.maven.repository.internal.DefaultArtifactDescriptorReader
 import org.apache.maven.repository.internal.DefaultVersionRangeResolver
@@ -33,9 +33,14 @@ import java.util.function.BiPredicate
 import java.util.stream.Collectors
 import javax.xml.bind.DatatypeConverter
 
+val mavenCentral = "central" to "https://repo.maven.apache.org/maven2/"
+val jcenter = "jcenter" to "https://jcenter.bintray.com/"
+val jitpack = "jitpack" to "https://jitpack.io"
+
 class Downloader(repoBaseDir: String,
                  private val root: String,
-                 private val excludes: List<Artifact>) {
+                 private val excludes: List<Artifact>,
+                 private val repositories: List<Pair<String, String>> = listOf(mavenCentral)) {
 
     private val repoDir: Path = Paths.get(repoBaseDir).toAbsolutePath()
     private val system = newRepositorySystem()
@@ -96,12 +101,7 @@ class Downloader(repoBaseDir: String,
         return session
     }
 
-    private fun newRepositories(): List<RemoteRepository> = listOf(
-            RemoteRepository.Builder("central", "default", "https://repo.maven.apache.org/maven2/").build(),
-            RemoteRepository.Builder("jcenter", "default", "https://jcenter.bintray.com/").build(),
-            RemoteRepository.Builder("jitpack", "default", "https://jitpack.io").build(),
-            RemoteRepository.Builder("gatehill", "default", "https://gatehillsoftware-maven.s3.amazonaws.com/snapshots/").build()
-    )
+    private fun newRepositories() = repositories.map { (id, url) -> RemoteRepository.Builder(id, "default", url).build() }
 
     fun collectJars(): List<UniqueFile> {
         println("Collecting JARs")
@@ -119,29 +119,12 @@ class Downloader(repoBaseDir: String,
             val digest = MessageDigest.getInstance("MD5")
             val block = ByteArray(4096)
 
-            do {
-                val length = stream.read(block)
-                if (length <= 0) break
-                digest.update(block, 0, length)
-            } while (true)
+            while (true) stream.read(block).takeIf { it > 0 }
+                    ?.let { length -> digest.update(block, 0, length) }
+                    ?: break
 
             return DatatypeConverter.printHexBinary(digest.digest())
         }
-    }
-
-    class UniqueFile(val file: Path,
-                     val hash: String) {
-
-        override fun equals(other: Any?): Boolean {
-            if (this === other) return true
-            if (other?.javaClass != javaClass) return false
-            other as UniqueFile
-            return (hash == other.hash)
-        }
-
-        override fun hashCode() = hash.hashCode()
-
-        override fun toString() = "UniqueFile(file=${file.fileName}, hash=$hash)"
     }
 
     fun clearRepo() {

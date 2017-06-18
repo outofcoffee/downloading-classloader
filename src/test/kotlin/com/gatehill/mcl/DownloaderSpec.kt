@@ -1,4 +1,5 @@
-import com.gatehill.plugins.Downloader
+package com.gatehill.mcl
+
 import org.amshove.kluent.`should be false`
 import org.amshove.kluent.`should be greater than`
 import org.amshove.kluent.`should be`
@@ -17,13 +18,19 @@ const val dependency = "com.gatehill.corebot:stores-redis:0.9.0-SNAPSHOT"
 const val className = "com.gatehill.corebot.store.redis.RedisDataStoreImpl"
 const val repoDir = "target/local-repo"
 val excludes = listOf(DefaultArtifact("org.jetbrains.kotlin:kotlin-stdlib:0"))
+val repos = listOf(
+        mavenCentral,
+        jcenter,
+        jitpack,
+        "gatehill" to "https://gatehillsoftware-maven.s3.amazonaws.com/snapshots/"
+)
 
 /**
  * Specification for `Downloader`.
  */
 object DownloaderSpec : Spek({
     given("a downloader") {
-        val downloader = Downloader(repoDir, dependency, excludes)
+        val downloader = Downloader(repoDir, dependency, excludes, repos)
 
         xon("clearing repo") {
             downloader.clearRepo()
@@ -39,7 +46,7 @@ object DownloaderSpec : Spek({
             val jars = downloader.collectJars()
             jars.forEach { println("Found: $it") }
 
-            it("should have downloaded JARs") {
+            it("should return a list of JARs") {
                 jars.`should not be empty`()
             }
 
