@@ -1,4 +1,4 @@
-group 'com.gatehill'
+group 'com.gatehill.mcl'
 version '0.1.0-SNAPSHOT'
 
 buildscript {
