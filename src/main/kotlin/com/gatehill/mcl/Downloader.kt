@@ -1,5 +1,6 @@
 package com.gatehill.mcl
 
+import com.gatehill.mcl.model.UniqueFile
 import org.apache.maven.repository.internal.DefaultArtifactDescriptorReader
 import org.apache.maven.repository.internal.DefaultVersionRangeResolver
 import org.apache.maven.repository.internal.DefaultVersionResolver
@@ -37,6 +38,11 @@ val mavenCentral = "central" to "https://repo.maven.apache.org/maven2/"
 val jcenter = "jcenter" to "https://jcenter.bintray.com/"
 val jitpack = "jitpack" to "https://jitpack.io"
 
+/**
+ * Downloads dependencies from Maven repositories.
+ *
+ * @author pete
+ */
 class Downloader(repoBaseDir: String,
                  private val root: String,
                  private val excludes: List<Artifact>,

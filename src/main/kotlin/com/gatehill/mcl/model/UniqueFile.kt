@@ -1,4 +1,4 @@
-package com.gatehill.mcl
+package com.gatehill.mcl.model
 
 import java.nio.file.Path
 
