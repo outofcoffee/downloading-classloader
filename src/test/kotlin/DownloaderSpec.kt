@@ -15,6 +15,7 @@ import java.nio.file.Paths
 
 const val dependency = "com.gatehill.corebot:stores-redis:0.9.0-SNAPSHOT"
 const val className = "com.gatehill.corebot.store.redis.RedisDataStoreImpl"
+const val repoDir = "target/local-repo"
 val excludes = listOf(DefaultArtifact("org.jetbrains.kotlin:kotlin-stdlib:0"))
 
 /**
@@ -22,13 +23,13 @@ val excludes = listOf(DefaultArtifact("org.jetbrains.kotlin:kotlin-stdlib:0"))
  */
 object DownloaderSpec : Spek({
     given("a downloader") {
-        val downloader = Downloader("target/local-repo", dependency, excludes)
+        val downloader = Downloader(repoDir, dependency, excludes)
 
         xon("clearing repo") {
             downloader.clearRepo()
 
             it("should clear the repo") {
-                Paths.get("target/local-repo").toFile().exists().`should be false`()
+                Paths.get(repoDir).toFile().exists().`should be false`()
             }
         }
 
