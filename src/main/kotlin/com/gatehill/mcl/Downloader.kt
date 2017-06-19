@@ -12,6 +12,7 @@ import org.eclipse.aether.artifact.DefaultArtifact
 import org.eclipse.aether.collection.CollectRequest
 import org.eclipse.aether.connector.basic.BasicRepositoryConnectorFactory
 import org.eclipse.aether.graph.Dependency
+import org.eclipse.aether.graph.Exclusion
 import org.eclipse.aether.impl.ArtifactDescriptorReader
 import org.eclipse.aether.impl.DefaultServiceLocator
 import org.eclipse.aether.impl.VersionRangeResolver
@@ -34,10 +35,6 @@ import java.util.function.BiPredicate
 import java.util.stream.Collectors
 import javax.xml.bind.DatatypeConverter
 
-val mavenCentral = "central" to "https://repo.maven.apache.org/maven2/"
-val jcenter = "jcenter" to "https://jcenter.bintray.com/"
-val jitpack = "jitpack" to "https://jitpack.io"
-
 /**
  * Downloads dependencies from Maven repositories.
  *
@@ -45,7 +42,7 @@ val jitpack = "jitpack" to "https://jitpack.io"
  */
 class Downloader(repoBaseDir: String,
                  private val root: String,
-                 private val excludes: List<Artifact> = emptyList(),
+                 private val excludes: List<Exclusion> = emptyList(),
                  private val repositories: List<Pair<String, String>> = listOf(mavenCentral)) {
 
     private val repoDir: Path = Paths.get(repoBaseDir).toAbsolutePath()
@@ -81,8 +78,13 @@ class Downloader(repoBaseDir: String,
             println("Resolved: ${it.artifact} to: ${it.artifact.file}")
         }
 
+        // ignore the excluded children of this dependency, as well as those explicitly specified
+        val allExclusions = excludes.toMutableList().apply {
+            addAll(dependencyResult.root.dependency.exclusions)
+        }
+
         dependencyResult.root.children
-                .filterNot { child -> excludes.any { child.artifact.groupId == it.groupId && child.artifact.artifactId == it.artifactId } }
+                .filterNot { child -> allExclusions.any { child.artifact.groupId == it.groupId && child.artifact.artifactId == it.artifactId } }
                 .filter { scope == it.dependency.scope }
                 .forEach { child -> download(child.artifact) }
     }

@@ -1,6 +1,6 @@
 package com.gatehill.mcl
 
-import org.eclipse.aether.artifact.Artifact
+import org.eclipse.aether.graph.Exclusion
 import java.net.URLClassLoader
 
 /**
@@ -11,7 +11,7 @@ import java.net.URLClassLoader
  */
 class MavenClassLoader(repoBaseDir: String,
                        root: String,
-                       excludes: List<Artifact> = emptyList(),
+                       excludes: List<Exclusion> = emptyList(),
                        repositories: List<Pair<String, String>> = listOf(mavenCentral)) : URLClassLoader(emptyArray()) {
 
     init {
