@@ -8,11 +8,11 @@ import org.jetbrains.spek.api.dsl.it
 import org.jetbrains.spek.api.dsl.on
 
 /**
- * Specification for `MavenClassLoader`.
+ * Specification for `DownloadingClassLoader`.
  */
-object MavenClassLoaderSpec : Spek({
+object DownloadingClassLoaderSpec : Spek({
     given("a class loader") {
-        val classLoader = MavenClassLoader(repoDir, dependency, excludes, repos)
+        val classLoader = DownloadingClassLoader(repoDir, dependency, excludes, repos)
 
         on("creating class loader") {
             it("should create the class loader") {

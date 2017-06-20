@@ -9,10 +9,11 @@ import java.net.URLClassLoader
  *
  * @author pete
  */
-class MavenClassLoader(repoBaseDir: String,
-                       root: String,
-                       excludes: List<Exclusion> = emptyList(),
-                       repositories: List<Pair<String, String>> = listOf(mavenCentral)) : URLClassLoader(emptyArray()) {
+open class DownloadingClassLoader(repoBaseDir: String,
+                                  root: String,
+                                  excludes: List<Exclusion> = emptyList(),
+                                  repositories: List<Pair<String, String>> = listOf(mavenCentral),
+                                  parent: ClassLoader = getSystemClassLoader()) : URLClassLoader(emptyArray(), parent) {
 
     init {
         with(Downloader(repoBaseDir, root, excludes, repositories)) {
