@@ -1,5 +1,6 @@
-package com.gatehill.mcl
+package com.gatehill.dlcl
 
+import com.gatehill.dlcl.classloader.DownloadingClassLoader
 import org.amshove.kluent.`should be`
 import org.amshove.kluent.`should not be null`
 import org.jetbrains.spek.api.Spek

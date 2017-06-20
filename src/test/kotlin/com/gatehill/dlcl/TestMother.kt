@@ -1,4 +1,4 @@
-package com.gatehill.mcl
+package com.gatehill.dlcl
 
 const val dependency = "com.gatehill.corebot:stores-redis:0.9.0-SNAPSHOT"
 

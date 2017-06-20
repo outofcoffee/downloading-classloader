@@ -1,4 +1,4 @@
-package com.gatehill.mcl
+package com.gatehill.dlcl
 
 import org.amshove.kluent.`should be false`
 import org.amshove.kluent.`should be greater than`
@@ -7,7 +7,6 @@ import org.jetbrains.spek.api.Spek
 import org.jetbrains.spek.api.dsl.given
 import org.jetbrains.spek.api.dsl.it
 import org.jetbrains.spek.api.dsl.on
-import org.jetbrains.spek.api.dsl.xon
 import java.nio.file.Paths
 
 /**

@@ -1,6 +1,6 @@
-package com.gatehill.mcl
+package com.gatehill.dlcl
 
-import com.gatehill.mcl.model.UniqueFile
+import com.gatehill.dlcl.model.UniqueFile
 import org.apache.maven.repository.internal.DefaultArtifactDescriptorReader
 import org.apache.maven.repository.internal.DefaultVersionRangeResolver
 import org.apache.maven.repository.internal.DefaultVersionResolver
