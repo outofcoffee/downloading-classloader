@@ -1,6 +1,6 @@
 package com.gatehill.dlcl.classloader
 
-import org.eclipse.aether.graph.Exclusion
+import com.gatehill.dlcl.mavenCentral
 import java.io.IOException
 import java.io.InputStream
 import java.net.URL
@@ -14,11 +14,8 @@ import java.util.Enumeration
  * @author pete
  */
 class ChildFirstDownloadingClassLoader(repoBaseDir: String,
-                                       root: String,
-                                       excludes: List<Exclusion>,
-                                       repositories: List<Pair<String, String>>,
-                                       parent: ClassLoader) :
-        DownloadingClassLoader(repoBaseDir, root, excludes, repositories, parent) {
+                                       repositories: List<Pair<String, String>> = listOf(mavenCentral),
+                                       parent: ClassLoader) : DownloadingClassLoader(repoBaseDir, repositories, parent) {
 
     private val system = getSystemClassLoader()
 

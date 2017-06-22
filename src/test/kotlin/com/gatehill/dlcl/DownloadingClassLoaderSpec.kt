@@ -1,5 +1,6 @@
 package com.gatehill.dlcl
 
+import com.gatehill.dlcl.classloader.ChildFirstDownloadingClassLoader
 import com.gatehill.dlcl.classloader.DownloadingClassLoader
 import org.amshove.kluent.`should be`
 import org.amshove.kluent.`should not be null`
@@ -12,23 +13,25 @@ import org.jetbrains.spek.api.dsl.on
  * Specification for `DownloadingClassLoader`.
  */
 object DownloadingClassLoaderSpec : Spek({
-    given("a class loader") {
-        val classLoader = DownloadingClassLoader(repoDir, dependency, excludes, repos)
+    val parentClassLoader = DownloadingClassLoaderSpec::class.java.classLoader
 
-        on("creating class loader") {
-            it("should create the class loader") {
-                classLoader.`should not be null`()
-            }
+    listOf(DownloadingClassLoader(repoDir, repos),
+            ChildFirstDownloadingClassLoader(repoDir, repos, parentClassLoader)).forEach { classLoader ->
 
-            val clazz = classLoader.loadClass(className)
-            it("should load the class") {
-                clazz.`should not be null`()
-                clazz.canonicalName `should be` className
-            }
+        given("a ${classLoader::class.java.simpleName}") {
+            on("fetching dependency") {
+                classLoader.fetch(dependency, excludes)
 
-            it("should instantiate the class") {
-                val dataStore = clazz.newInstance()
-                dataStore::class.java.canonicalName `should be` className
+                val clazz = classLoader.loadClass(className)
+                it("can load the class") {
+                    clazz.`should not be null`()
+                    clazz.canonicalName `should be` className
+                }
+
+                it("can instantiate the class") {
+                    val dataStore = clazz.newInstance()
+                    dataStore::class.java.canonicalName `should be` className
+                }
             }
         }
     }
