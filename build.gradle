@@ -1,5 +1,5 @@
 group 'com.gatehill.dlcl'
-version '0.1.6-SNAPSHOT'
+version '0.1.7-SNAPSHOT'
 
 buildscript {
     ext.mavenSnapshotRepository = 's3://gatehillsoftware-maven/snapshots'

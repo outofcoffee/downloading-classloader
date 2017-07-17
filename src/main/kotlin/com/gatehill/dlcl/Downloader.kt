@@ -1,6 +1,5 @@
 package com.gatehill.dlcl
 
-import com.gatehill.dlcl.model.UniqueFile
 import org.apache.maven.repository.internal.DefaultArtifactDescriptorReader
 import org.apache.maven.repository.internal.DefaultVersionRangeResolver
 import org.apache.maven.repository.internal.DefaultVersionResolver
@@ -27,13 +26,8 @@ import org.eclipse.aether.transport.http.HttpTransporterFactory
 import org.eclipse.aether.util.artifact.JavaScopes
 import org.eclipse.aether.util.filter.DependencyFilterUtils
 import org.eclipse.aether.util.filter.ExclusionsDependencyFilter
-import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
-import java.security.MessageDigest
-import java.util.function.BiPredicate
-import java.util.stream.Collectors
-import javax.xml.bind.DatatypeConverter
 
 /**
  * Downloads dependencies from Maven repositories.
@@ -110,30 +104,6 @@ class Downloader(repoBaseDir: String,
     }
 
     private fun newRepositories() = repositories.map { (id, url) -> RemoteRepository.Builder(id, "default", url).build() }
-
-    fun collectJars(): List<UniqueFile> {
-        println("Collecting JARs")
-
-        return Files
-                .find(repoDir, 10, BiPredicate { path, _ -> path.fileName.toString().endsWith(".jar") })
-                .parallel()
-                .map { UniqueFile(it, checksum(it)) }
-                .distinct()
-                .collect(Collectors.toList())
-    }
-
-    private fun checksum(file: Path): String {
-        Files.newInputStream(file).use { stream ->
-            val digest = MessageDigest.getInstance("MD5")
-            val block = ByteArray(4096)
-
-            while (true) stream.read(block).takeIf { it > 0 }
-                    ?.let { length -> digest.update(block, 0, length) }
-                    ?: break
-
-            return DatatypeConverter.printHexBinary(digest.digest())
-        }
-    }
 
     fun clearRepo() {
         println("Clearing repo: $repoDir")

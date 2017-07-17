@@ -1,5 +1,6 @@
 package com.gatehill.dlcl.classloader
 
+import com.gatehill.dlcl.Collector
 import com.gatehill.dlcl.Downloader
 import com.gatehill.dlcl.mavenCentral
 import org.eclipse.aether.graph.Exclusion
@@ -15,20 +16,11 @@ open class DownloadingClassLoader(private val repoBaseDir: String,
                                   private val repositories: List<Pair<String, String>> = listOf(mavenCentral),
                                   parent: ClassLoader = getSystemClassLoader()) : URLClassLoader(emptyArray(), parent) {
 
-    fun load(root: String, excludes: List<Exclusion> = emptyList()) {
-        withDownloader(root, excludes) {
-            collectJars().forEach { addURL(it.file.toUri().toURL()) }
-        }
-    }
-
+    /**
+     * Download the given dependencies, then load them into the `Classloader`.
+     */
     fun fetch(root: String, excludes: List<Exclusion> = emptyList()) {
-        withDownloader(root, excludes) {
-            download()
-            collectJars().forEach { addURL(it.file.toUri().toURL()) }
-        }
-    }
-
-    private fun withDownloader(root: String, excludes: List<Exclusion>, block: Downloader.() -> Unit) {
-        with(Downloader(repoBaseDir, root, excludes, repositories)) { block() }
+        Downloader(repoBaseDir, root, excludes, repositories).download()
+        Collector(repoBaseDir).collectJars().forEach { addURL(it.file.toUri().toURL()) }
     }
 }
