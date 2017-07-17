@@ -19,7 +19,14 @@ open class DownloadingClassLoader(private val repoBaseDir: String,
     /**
      * Download the given dependencies, then load them into the `Classloader`.
      */
-    fun fetch(root: String, excludes: List<Exclusion> = emptyList()) {
+    fun load() {
+        Collector(repoBaseDir).collectJars().forEach { addURL(it.file.toUri().toURL()) }
+    }
+
+    /**
+     * Download the given dependencies, then load them into the `Classloader`.
+     */
+    fun fetchThenLoad(root: String, excludes: List<Exclusion> = emptyList()) {
         Downloader(repoBaseDir, root, excludes, repositories).download()
         Collector(repoBaseDir).collectJars().forEach { addURL(it.file.toUri().toURL()) }
     }
