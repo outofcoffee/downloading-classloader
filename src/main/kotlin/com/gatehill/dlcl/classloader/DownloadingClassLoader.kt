@@ -28,6 +28,6 @@ open class DownloadingClassLoader(private val repoBaseDir: String,
      */
     fun fetchThenLoad(root: String, excludes: List<Exclusion> = emptyList()) {
         Downloader(repoBaseDir, root, excludes, repositories).download()
-        Collector(repoBaseDir).collectJars().forEach { addURL(it.file.toUri().toURL()) }
+        load()
     }
 }

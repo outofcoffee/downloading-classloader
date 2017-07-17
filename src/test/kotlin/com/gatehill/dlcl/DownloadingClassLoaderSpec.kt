@@ -20,7 +20,7 @@ object DownloadingClassLoaderSpec : Spek({
 
         given("a ${classLoader::class.java.simpleName}") {
             on("fetching dependency") {
-                classLoader.fetch(dependency, excludes)
+                classLoader.fetchThenLoad(dependency, excludes)
 
                 val clazz = classLoader.loadClass(className)
                 it("can load the class") {
