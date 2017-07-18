@@ -18,12 +18,12 @@ class Collector(repoBaseDir: String) {
     private val repoDir: Path = Paths.get(repoBaseDir).toAbsolutePath()
 
     fun clearCollected() {
-        println("Clearing repo: $repoDir")
+        println("Clearing repository: $repoDir")
         repoDir.toFile().takeIf { it.exists() }?.deleteRecursively()
     }
 
     fun collectJars(): List<UniqueFile> {
-        println("Collecting JARs")
+        println("Collecting JARs from: $repoDir")
 
         return Files
                 .find(repoDir, 10, BiPredicate { path, _ -> path.fileName.toString().endsWith(".jar") })
