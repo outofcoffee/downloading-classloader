@@ -7,6 +7,7 @@ import org.jetbrains.spek.api.Spek
 import org.jetbrains.spek.api.dsl.given
 import org.jetbrains.spek.api.dsl.it
 import org.jetbrains.spek.api.dsl.on
+import java.io.File
 import java.nio.file.Paths
 
 /**
@@ -17,7 +18,7 @@ object DownloaderSpec : Spek({
         val downloader = Downloader(repoDir, dependency, excludes, repos)
 
         on("clearing repo") {
-            downloader.clearRepo()
+            File(repoDir).takeIf { it.exists() }?.deleteRecursively()
 
             it("should clear the repo") {
                 Paths.get(repoDir).toFile().exists().`should be false`()

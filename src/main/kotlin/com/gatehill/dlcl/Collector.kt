@@ -17,6 +17,11 @@ import javax.xml.bind.DatatypeConverter
 class Collector(repoBaseDir: String) {
     private val repoDir: Path = Paths.get(repoBaseDir).toAbsolutePath()
 
+    fun clearCollected() {
+        println("Clearing repo: $repoDir")
+        repoDir.toFile().takeIf { it.exists() }?.deleteRecursively()
+    }
+
     fun collectJars(): List<UniqueFile> {
         println("Collecting JARs")
 

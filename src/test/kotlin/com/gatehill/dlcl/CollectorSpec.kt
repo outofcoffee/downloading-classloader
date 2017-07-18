@@ -18,7 +18,7 @@ object CollectorSpec : Spek({
         val collector = Collector(repoDir)
 
         on("clearing repo") {
-            File(repoDir).takeIf { it.exists() }?.deleteRecursively()
+            collector.clearCollected()
 
             it("should clear the repo") {
                 Paths.get(repoDir).toFile().exists().`should be false`()

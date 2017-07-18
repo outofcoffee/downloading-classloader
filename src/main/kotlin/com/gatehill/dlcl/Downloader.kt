@@ -104,9 +104,4 @@ class Downloader(repoBaseDir: String,
     }
 
     private fun newRepositories() = repositories.map { (id, url) -> RemoteRepository.Builder(id, "default", url).build() }
-
-    fun clearRepo() {
-        println("Clearing repo: $repoDir")
-        repoDir.toFile().takeIf { it.exists() }?.deleteRecursively()
-    }
 }
