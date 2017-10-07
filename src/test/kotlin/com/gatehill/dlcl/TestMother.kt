@@ -1,10 +1,14 @@
 package com.gatehill.dlcl
 
-const val dependency = "com.gatehill.corebot:stores-redis:0.9.0-SNAPSHOT"
+const val jarDependencyCoordinates = "com.gatehill.corebot:stores-redis:0.9.0-SNAPSHOT"
 
-const val className = "com.gatehill.corebot.store.redis.RedisDataStoreImpl"
+const val jarDependencyClassName = "com.gatehill.corebot.store.redis.RedisDataStoreImpl"
 
 const val repoDir = "target/local-repo"
+
+const val warDependencyUrl = "http://repo1.maven.org/maven2/org/eclipse/jetty/test-jetty-webapp/9.4.7.v20170914/test-jetty-webapp-9.4.7.v20170914.war"
+
+const val warDependencyNestedJarClassName = "org.eclipse.jetty.http.HttpFields"
 
 val excludes = listOf(exclusion("org.jetbrains.kotlin", "kotlin-stdlib"))
 

@@ -20,7 +20,7 @@ object CollectorSpec : Spek({
         on("clearing repo") {
             collector.clearCollected()
 
-            it("should clear the repo") {
+            it("clears the repo") {
                 Paths.get(repoDir).toFile().exists().`should be false`()
             }
         }
@@ -33,11 +33,11 @@ object CollectorSpec : Spek({
             val jars = collector.collectDependencies()
             jars.forEach { println("Found: $it") }
 
-            it("should return a list of JARs") {
+            it("returns a list of JARs") {
                 jars.`should not be empty`()
             }
 
-            it("should have collected existent JAR files") {
+            it("collects existent JAR files") {
                 jars.forEach { it.file.toFile().exists().`should be true`() }
             }
         }

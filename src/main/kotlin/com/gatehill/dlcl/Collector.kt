@@ -10,6 +10,7 @@ import java.util.function.BiPredicate
 import java.util.stream.Collectors
 import javax.xml.bind.DatatypeConverter
 
+
 /**
  * Collects downloaded dependencies from the repository.
  *
@@ -33,7 +34,7 @@ class Collector(repoBaseDir: String) {
                     }
                 })
                 .parallel()
-                .map { UniqueFile(it, checksum(it)) }
+                .map { UniqueFile(it, DependencyType.find(it.fileName.toString())!!, checksum(it)) }
                 .distinct()
                 .collect(Collectors.toList())
     }

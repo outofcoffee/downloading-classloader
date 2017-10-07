@@ -1,5 +1,6 @@
 package com.gatehill.dlcl
 
+import com.gatehill.dlcl.model.DependencyType
 import org.apache.maven.repository.internal.DefaultArtifactDescriptorReader
 import org.apache.maven.repository.internal.DefaultVersionRangeResolver
 import org.apache.maven.repository.internal.DefaultVersionResolver
@@ -26,8 +27,14 @@ import org.eclipse.aether.transport.http.HttpTransporterFactory
 import org.eclipse.aether.util.artifact.JavaScopes
 import org.eclipse.aether.util.filter.DependencyFilterUtils
 import org.eclipse.aether.util.filter.ExclusionsDependencyFilter
+import java.net.URI
+import java.nio.file.FileSystems
+import java.nio.file.FileVisitResult
+import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
+import java.nio.file.SimpleFileVisitor
+import java.nio.file.attribute.BasicFileAttributes
 
 /**
  * Downloads dependencies from Maven repositories.
@@ -35,7 +42,7 @@ import java.nio.file.Paths
  * @author pete
  */
 class Downloader(repoBaseDir: String,
-                 private val root: String,
+                 private val root: String? = null,
                  private val excludes: List<Exclusion> = emptyList(),
                  private val repositories: List<Pair<String, String>> = listOf(mavenCentral)) {
 
@@ -44,7 +51,7 @@ class Downloader(repoBaseDir: String,
     private val session = newRepositorySystemSession(system, repoDir.toString())
     private val artifactCache = mutableListOf<Artifact>()
 
-    fun download(coordinates: String = root, scope: String = JavaScopes.RUNTIME) =
+    fun download(coordinates: String = root!!, scope: String = JavaScopes.RUNTIME) =
             download(DefaultArtifact(coordinates), scope)
 
     fun download(artifact: Artifact, scope: String = JavaScopes.RUNTIME) {
@@ -81,6 +88,58 @@ class Downloader(repoBaseDir: String,
                 .filterNot { child -> allExclusions.any { child.artifact.groupId == it.groupId && child.artifact.artifactId == it.artifactId } }
                 .filter { scope == it.dependency.scope }
                 .forEach { child -> download(child.artifact) }
+    }
+
+    fun downloadFile(uri: URI) {
+        with(repoDir.toFile()) {
+            if (!exists()) mkdirs()
+        }
+
+        val uriFilename = uri.path.substring(uri.path.lastIndexOf("/"))
+        val outputFile = Paths.get(repoDir.toString(), uriFilename)
+
+        uri.toURL().openStream().use {
+            it.copyTo(outputFile.toFile().outputStream())
+        }
+
+        val dependencyType = DependencyType.find(uriFilename)
+        if (dependencyType?.isContainer == true) {
+            println("File is a container: $uriFilename - extracting nested files under: ${dependencyType.nestedPath}")
+            extractNestedFiles(outputFile, dependencyType)
+        } else {
+            println("File is not a container: $uriFilename - skipping extraction")
+        }
+    }
+
+    private fun extractNestedFiles(dependency: Path, dependencyType: DependencyType) {
+        val outputDir = Paths.get(repoDir.toString(),
+                dependency.fileName.toString().substring(0, dependency.fileName.toString().lastIndexOf(".")))
+
+        if (!outputDir.toFile().exists()) {
+            outputDir.toFile().mkdirs()
+        }
+
+        val zipFs = FileSystems.newFileSystem(dependency, null)
+        val pathInZip = zipFs.getPath(dependencyType.nestedPath)
+
+        Files.walkFileTree(pathInZip, object : SimpleFileVisitor<Path>() {
+            override fun visitFile(filePath: Path, attrs: BasicFileAttributes): FileVisitResult {
+                // Make sure that we conserve the hierarchy of files and folders inside the zip
+                val relativePathInZip = pathInZip.relativize(filePath)
+                val targetPath = outputDir.resolve(relativePathInZip.toString())
+                Files.createDirectories(targetPath.parent)
+
+                // And extract the file
+                if (targetPath.toFile().exists()) {
+                    targetPath.toFile().delete()
+                }
+                Files.copy(filePath, targetPath)
+
+                return FileVisitResult.CONTINUE
+            }
+        })
+
+        dependency.toFile().delete()
     }
 
     private fun newRepositorySystem(): RepositorySystem {

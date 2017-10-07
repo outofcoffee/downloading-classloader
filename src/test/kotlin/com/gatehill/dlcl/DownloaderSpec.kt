@@ -1,13 +1,17 @@
 package com.gatehill.dlcl
 
+import com.gatehill.dlcl.model.DependencyType
 import org.amshove.kluent.`should be false`
 import org.amshove.kluent.`should be greater than`
+import org.amshove.kluent.`should be true`
+import org.amshove.kluent.`should equal`
 import org.amshove.kluent.`should not be empty`
 import org.jetbrains.spek.api.Spek
 import org.jetbrains.spek.api.dsl.given
 import org.jetbrains.spek.api.dsl.it
 import org.jetbrains.spek.api.dsl.on
 import java.io.File
+import java.net.URI
 import java.nio.file.Paths
 
 /**
@@ -15,12 +19,12 @@ import java.nio.file.Paths
  */
 object DownloaderSpec : Spek({
     given("a downloader") {
-        val downloader = Downloader(repoDir, dependency, excludes, repos)
+        val downloader = Downloader(repoDir, jarDependencyCoordinates, excludes, repos)
 
         on("clearing repo") {
             File(repoDir).takeIf { it.exists() }?.deleteRecursively()
 
-            it("should clear the repo") {
+            it("clears the repo") {
                 Paths.get(repoDir).toFile().exists().`should be false`()
             }
         }
@@ -31,12 +35,39 @@ object DownloaderSpec : Spek({
             val jars = Collector(repoDir).collectDependencies()
             jars.forEach { println("Found: $it") }
 
-            it("should return a list of JARs") {
+            it("returns a list of JARs") {
                 jars.`should not be empty`()
             }
 
-            it("should have downloaded valid JARs") {
+            it("downloaded valid JARs") {
                 jars.forEach { it.file.toFile().length() `should be greater than` 0 }
+            }
+        }
+
+        on("downloading a WAR file") {
+            val collector = Collector(repoDir)
+            collector.clearCollected()
+
+            val warUri = URI.create(warDependencyUrl)
+            downloader.downloadFile(warUri)
+
+            val uriFilename = warUri.path.substring(warUri.path.lastIndexOf("/"))
+
+            it("downloaded the WAR and extracted it") {
+                val dependencyFileName = Paths.get(repoDir, uriFilename)
+                dependencyFileName.toFile().exists().`should be false`()
+
+                val outputDir = Paths.get(dependencyFileName.toString()
+                        .substring(0, dependencyFileName.toString().lastIndexOf(".")))
+
+                outputDir.toFile().exists().`should be true`()
+            }
+
+            it("can read the nested JARs") {
+                val nestedJars = collector.collectDependencies(DependencyType.JAR)
+                nestedJars.count() `should equal` 7
+
+                nestedJars[0].file.toFile().length() `should be greater than` 0
             }
         }
     }
