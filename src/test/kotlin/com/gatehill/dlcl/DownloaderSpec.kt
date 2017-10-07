@@ -28,7 +28,7 @@ object DownloaderSpec : Spek({
         on("downloading dependencies") {
             downloader.download()
 
-            val jars = Collector(repoDir).collectJars()
+            val jars = Collector(repoDir).collectDependencies()
             jars.forEach { println("Found: $it") }
 
             it("should return a list of JARs") {

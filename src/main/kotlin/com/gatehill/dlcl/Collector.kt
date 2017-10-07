@@ -1,5 +1,6 @@
 package com.gatehill.dlcl
 
+import com.gatehill.dlcl.model.DependencyType
 import com.gatehill.dlcl.model.UniqueFile
 import java.nio.file.Files
 import java.nio.file.Path
@@ -22,11 +23,15 @@ class Collector(repoBaseDir: String) {
         repoDir.toFile().takeIf { it.exists() }?.deleteRecursively()
     }
 
-    fun collectJars(): List<UniqueFile> {
-        println("Collecting JARs from: $repoDir")
+    fun collectDependencies(vararg dependencyTypes: DependencyType = arrayOf(DependencyType.JAR)): List<UniqueFile> {
+        println("Collecting dependencies from: $repoDir")
 
         return Files
-                .find(repoDir, 10, BiPredicate { path, _ -> path.fileName.toString().endsWith(".jar") })
+                .find(repoDir, 10, BiPredicate { path, _ ->
+                    dependencyTypes.any { dependencyType ->
+                        path.fileName.toString().endsWith(".${dependencyType.extension}")
+                    }
+                })
                 .parallel()
                 .map { UniqueFile(it, checksum(it)) }
                 .distinct()

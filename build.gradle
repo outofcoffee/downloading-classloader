@@ -1,12 +1,12 @@
 group 'com.gatehill.dlcl'
-version '0.2.0-SNAPSHOT'
+version '0.2.1-SNAPSHOT'
 
 buildscript {
     ext.mavenSnapshotRepository = 's3://gatehillsoftware-maven/snapshots'
     ext.awsAccessKey = System.getenv('AWS_ACCESS_KEY_ID') ?: project.findProperty('AWS_ACCESS_KEY_ID')
     ext.awsSecretKey = System.getenv('AWS_SECRET_ACCESS_KEY') ?: project.findProperty('AWS_SECRET_ACCESS_KEY')
 
-    ext.kotlin_version = '1.1.2-5'
+    ext.kotlin_version = '1.1.51'
     ext.resolverVersion = '1.0.3'
     ext.mavenVersion = '3.5.0'
     ext.version_log4j = '2.5'

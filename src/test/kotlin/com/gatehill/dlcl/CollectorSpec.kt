@@ -30,7 +30,7 @@ object CollectorSpec : Spek({
             File(repoDir, "example1.jar").createNewFile()
             File(repoDir, "example2.jar").createNewFile()
 
-            val jars = collector.collectJars()
+            val jars = collector.collectDependencies()
             jars.forEach { println("Found: $it") }
 
             it("should return a list of JARs") {

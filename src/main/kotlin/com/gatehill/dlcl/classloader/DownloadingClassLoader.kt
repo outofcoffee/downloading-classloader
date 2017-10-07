@@ -20,7 +20,7 @@ open class DownloadingClassLoader(private val repoBaseDir: String,
      * Download the given dependencies, then load them into the `Classloader`.
      */
     fun load() {
-        Collector(repoBaseDir).collectJars().forEach { addURL(it.file.toUri().toURL()) }
+        Collector(repoBaseDir).collectDependencies().forEach { addURL(it.file.toUri().toURL()) }
     }
 
     /**
