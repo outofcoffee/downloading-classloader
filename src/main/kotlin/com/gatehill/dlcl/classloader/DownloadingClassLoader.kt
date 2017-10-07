@@ -39,6 +39,16 @@ open class DownloadingClassLoader(private val repoBaseDir: String,
     /**
      * Download the given file, then load it into the `Classloader`.
      */
+    fun fetchSingleDependencyThenLoad(coordinates: String,
+                                      vararg dependencyTypes: DependencyType = arrayOf(DependencyType.JAR)) {
+
+        Downloader(repoBaseDir).downloadSingleDependency(coordinates)
+        load(*dependencyTypes)
+    }
+
+    /**
+     * Download the given file, then load it into the `Classloader`.
+     */
     fun fetchFileThenLoad(uri: URI, vararg dependencyTypes: DependencyType = arrayOf(DependencyType.JAR)) {
         Downloader(repoBaseDir).downloadFile(uri)
         load(*dependencyTypes)

@@ -9,7 +9,6 @@ import org.jetbrains.spek.api.Spek
 import org.jetbrains.spek.api.dsl.given
 import org.jetbrains.spek.api.dsl.it
 import org.jetbrains.spek.api.dsl.on
-import java.net.URI
 
 /**
  * Specification for `DownloadingClassLoader`.
@@ -41,7 +40,7 @@ object DownloadingClassLoaderSpec : Spek({
                 Collector(repoDir).clearCollected()
 
                 it("can fetch the dependencies") {
-                    classLoader.fetchFileThenLoad(URI.create(warDependencyUrl), DependencyType.JAR)
+                    classLoader.fetchSingleDependencyThenLoad(warDependencyCoordinates, DependencyType.JAR)
                 }
 
                 it("can load and instantiate the class") {

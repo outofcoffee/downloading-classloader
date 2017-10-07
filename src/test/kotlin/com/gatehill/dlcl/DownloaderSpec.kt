@@ -7,6 +7,7 @@ import org.amshove.kluent.`should be true`
 import org.amshove.kluent.`should equal`
 import org.amshove.kluent.`should not be empty`
 import org.jetbrains.spek.api.Spek
+import org.jetbrains.spek.api.dsl.ActionBody
 import org.jetbrains.spek.api.dsl.given
 import org.jetbrains.spek.api.dsl.it
 import org.jetbrains.spek.api.dsl.on
@@ -29,7 +30,7 @@ object DownloaderSpec : Spek({
             }
         }
 
-        on("downloading dependencies") {
+        on("downloading JAR dependencies") {
             downloader.download()
 
             val jars = Collector(repoDir).collectDependencies()
@@ -44,33 +45,39 @@ object DownloaderSpec : Spek({
             }
         }
 
-        on("downloading a WAR file") {
+        on("downloading a WAR file by coordinates") {
             val collector = Collector(repoDir)
             collector.clearCollected()
 
-            val warUri = URI.create(warDependencyUrl)
+            downloader.downloadSingleDependency(warDependencyCoordinates)
+            verifyDownloadedWar(collector)
+        }
 
-//            downloader.downloadFile(warUri)
-            downloader.downloadSingleDependency("org.eclipse.jetty:test-jetty-webapp:war:9.4.7.v20170914")
+        on("downloading a WAR file by URL") {
+            val collector = Collector(repoDir)
+            collector.clearCollected()
 
-            val uriFilename = warUri.path.substring(warUri.path.lastIndexOf("/"))
-
-            it("downloaded the WAR and extracted it") {
-                val dependencyFileName = Paths.get(repoDir, uriFilename)
-                dependencyFileName.toFile().exists().`should be false`()
-
-                val outputDir = Paths.get(dependencyFileName.toString()
-                        .substring(0, dependencyFileName.toString().lastIndexOf(".")))
-
-                outputDir.toFile().exists().`should be true`()
-            }
-
-            it("can read the nested JARs") {
-                val nestedJars = collector.collectDependencies(DependencyType.JAR)
-                nestedJars.count() `should equal` 7
-
-                nestedJars[0].file.toFile().length() `should be greater than` 0
-            }
+            downloader.downloadFile(URI.create(warDependencyUrl))
+            verifyDownloadedWar(collector)
         }
     }
 })
+
+private fun ActionBody.verifyDownloadedWar(collector: Collector) {
+    it("downloaded the WAR and extracted it") {
+        val dependencyFileName = Paths.get(repoDir, warDependencyFilename)
+        dependencyFileName.toFile().exists().`should be false`()
+
+        val outputDir = Paths.get(dependencyFileName.toString()
+                .substring(0, dependencyFileName.toString().lastIndexOf(".")))
+
+        outputDir.toFile().exists().`should be true`()
+    }
+
+    it("can read the nested JARs") {
+        val nestedJars = collector.collectDependencies(DependencyType.JAR)
+        nestedJars.count() `should equal` 7
+
+        nestedJars[0].file.toFile().length() `should be greater than` 0
+    }
+}

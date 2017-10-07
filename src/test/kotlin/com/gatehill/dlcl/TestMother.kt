@@ -6,7 +6,11 @@ const val jarDependencyClassName = "com.gatehill.corebot.store.redis.RedisDataSt
 
 const val repoDir = "target/local-repo"
 
+const val warDependencyCoordinates = "org.eclipse.jetty:test-jetty-webapp:war:9.4.7.v20170914"
+
 const val warDependencyUrl = "http://repo1.maven.org/maven2/org/eclipse/jetty/test-jetty-webapp/9.4.7.v20170914/test-jetty-webapp-9.4.7.v20170914.war"
+
+const val warDependencyFilename = "test-jetty-webapp-9.4.7.v20170914.war"
 
 const val warDependencyNestedJarClassName = "org.eclipse.jetty.http.HttpFields"
 

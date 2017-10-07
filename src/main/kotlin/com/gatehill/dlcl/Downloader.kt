@@ -19,6 +19,7 @@ import org.eclipse.aether.impl.VersionRangeResolver
 import org.eclipse.aether.impl.VersionResolver
 import org.eclipse.aether.repository.LocalRepository
 import org.eclipse.aether.repository.RemoteRepository
+import org.eclipse.aether.resolution.ArtifactRequest
 import org.eclipse.aether.resolution.DependencyRequest
 import org.eclipse.aether.spi.connector.RepositoryConnectorFactory
 import org.eclipse.aether.spi.connector.transport.TransporterFactory
@@ -47,8 +48,8 @@ class Downloader(repoBaseDir: String,
                  private val repositories: List<Pair<String, String>> = listOf(mavenCentral)) {
 
     private val repoDir: Path = Paths.get(repoBaseDir).toAbsolutePath()
-    private val system = newRepositorySystem()
-    private val session = newRepositorySystemSession(system, repoDir.toString())
+    private val system by lazy { newRepositorySystem() }
+    private val session by lazy { newRepositorySystemSession(system, repoDir.toString()) }
     private val artifactCache = mutableListOf<Artifact>()
 
     fun download(coordinates: String = root!!, scope: String = JavaScopes.RUNTIME) =
@@ -93,20 +94,18 @@ class Downloader(repoBaseDir: String,
     fun downloadSingleDependency(coordinates: String) {
         val artifact = DefaultArtifact(coordinates)
 
-        repositories.forEach { repo ->
-            val artifactUri = repo.second +
-                    artifact.groupId.replace(".", "/") +
-                    "/" + artifact.artifactId +
-                    "/" + artifact.version +
-                    "/" + artifact.artifactId + "-" + artifact.version + "." + artifact.extension
-
-            try {
-                downloadFile(URI.create(artifactUri))
-                return
-            } catch (e: Exception) {
-                println("Could not download artifact $artifact from repository: $repo")
-            }
+        if (artifactCache.contains(artifact)) {
+            println("Already downloaded: $artifact")
+            return
+        } else {
+            artifactCache += artifact
         }
+        println("Downloading: $artifact")
+
+        val artifactRequest = ArtifactRequest(artifact, newRepositories(), null)
+        val artifactResult = system.resolveArtifact(session, artifactRequest)
+
+        processDownloadedArtifact(artifactResult.artifact.file.toPath())
     }
 
     fun downloadFile(uri: URI) {
@@ -121,12 +120,18 @@ class Downloader(repoBaseDir: String,
             it.copyTo(outputFile.toFile().outputStream())
         }
 
-        val dependencyType = DependencyType.find(uriFilename)
+        processDownloadedArtifact(outputFile)
+    }
+
+    private fun processDownloadedArtifact(artifactFile: Path) {
+        val filename = artifactFile.fileName.toString()
+
+        val dependencyType = DependencyType.find(filename)
         if (dependencyType?.isContainer == true) {
-            println("File is a container: $uriFilename - extracting nested files under: ${dependencyType.nestedPath}")
-            extractNestedFiles(outputFile, dependencyType)
+            println("File is a container: $filename - extracting nested files under: ${dependencyType.nestedPath}")
+            extractNestedFiles(artifactFile, dependencyType)
         } else {
-            println("File is not a container: $uriFilename - skipping extraction")
+            println("File is not a container: $filename - skipping extraction")
         }
     }
 
