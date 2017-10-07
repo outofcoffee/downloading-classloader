@@ -49,7 +49,9 @@ object DownloaderSpec : Spek({
             collector.clearCollected()
 
             val warUri = URI.create(warDependencyUrl)
-            downloader.downloadFile(warUri)
+
+//            downloader.downloadFile(warUri)
+            downloader.downloadSingleDependency("org.eclipse.jetty:test-jetty-webapp:war:9.4.7.v20170914")
 
             val uriFilename = warUri.path.substring(warUri.path.lastIndexOf("/"))
 

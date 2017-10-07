@@ -90,6 +90,25 @@ class Downloader(repoBaseDir: String,
                 .forEach { child -> download(child.artifact) }
     }
 
+    fun downloadSingleDependency(coordinates: String) {
+        val artifact = DefaultArtifact(coordinates)
+
+        repositories.forEach { repo ->
+            val artifactUri = repo.second +
+                    artifact.groupId.replace(".", "/") +
+                    "/" + artifact.artifactId +
+                    "/" + artifact.version +
+                    "/" + artifact.artifactId + "-" + artifact.version + "." + artifact.extension
+
+            try {
+                downloadFile(URI.create(artifactUri))
+                return
+            } catch (e: Exception) {
+                println("Could not download artifact $artifact from repository: $repo")
+            }
+        }
+    }
+
     fun downloadFile(uri: URI) {
         with(repoDir.toFile()) {
             if (!exists()) mkdirs()
